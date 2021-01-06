@@ -1,7 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:motion_tab_bar/MotionTabBarView.dart';
+import 'package:motion_tab_bar/MotionTabController.dart';
+import 'package:motion_tab_bar/TabItem.dart';
+import 'package:motion_tab_bar/motiontabbar.dart';
+// import 'package:flutter/src/material/colors.dart';
+
+import './Menu.dart';
 
 void main() {
   runApp(MyApp());
+}
+
+MaterialColor createMaterialColor(Color color) {
+  List strengths = <double>[.05];
+  Map swatch = <int, Color>{};
+  final int r = color.red, g = color.green, b = color.blue;
+
+  for (int i = 1; i < 10; i++) {
+    strengths.add(0.1 * i);
+  }
+  strengths.forEach((strength) {
+    final double ds = 0.5 - strength;
+    swatch[(strength * 1000).round()] = Color.fromRGBO(
+      r + ((ds < 0 ? r : (255 - r)) * ds).round(),
+      g + ((ds < 0 ? g : (255 - g)) * ds).round(),
+      b + ((ds < 0 ? b : (255 - b)) * ds).round(),
+      1,
+    );
+  });
+  return MaterialColor(color.value, swatch);
 }
 
 class MyApp extends StatelessWidget {
@@ -9,7 +36,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Movie Dare',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -20,13 +47,14 @@ class MyApp extends StatelessWidget {
         // or simply save your changes to "hot reload" in a Flutter IDE).
         // Notice that the counter didn't reset back to zero; the application
         // is not restarted.
-        primarySwatch: Colors.blue,
+        primarySwatch: createMaterialColor(Color(0xFF1f2836)),
+        // primarySwatch: createMaterialColor(Colors.redAccent),
         // This makes the visual density adapt to the platform that you run
         // the app on. For desktop platforms, the controls will be smaller and
         // closer together (more dense) than on mobile platforms.
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Movie Dare'),
     );
   }
 }
@@ -49,18 +77,19 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
+  MotionTabController _tabController;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _tabController = MotionTabController(initialIndex: 1, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _tabController.dispose();
   }
 
   @override
@@ -77,41 +106,46 @@ class _MyHomePageState extends State<MyHomePage> {
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
+      backgroundColor: Colors.white,
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
+        child: Menu(),
+        //child: CardList(),
+      ),
+      floatingActionButton: Align(
+        // color: Colors.blue,
+        alignment: Alignment.bottomRight,
+        // padding: EdgeInsets.only(bottom: 40, right: 10),
+        child: RawMaterialButton(
+          onPressed: () {},
+          elevation: 8.0,
+          fillColor: Color(0xFF1f2836),
+          child: Icon(
+            Icons.shuffle,
+            color: Colors.white,
+            size: 35.0,
+          ),
+          padding: EdgeInsets.all(15.0),
+          shape: CircleBorder(),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      bottomNavigationBar: Container(
+        color: Colors.blue,
+        child: MotionTabBar(
+          labels: ["Hot", "Popular", "Genre"],
+          initialSelectedTab: "Hot",
+          tabIconColor: Color(0xFF1f2836),
+          tabSelectedColor: Colors.redAccent,
+          onTabItemSelected: (int value) {},
+          icons: [Icons.trending_up, Icons.movie, Icons.category],
+          textStyle: TextStyle(
+            color: Color(0xFF1f2836),
+            fontWeight: FontWeight.bold,
+            // fontSize: 18.0,
+          ),
+        ),
+      ),
     );
   }
 }
