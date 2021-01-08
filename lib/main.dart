@@ -3,9 +3,13 @@ import 'package:motion_tab_bar/MotionTabBarView.dart';
 import 'package:motion_tab_bar/MotionTabController.dart';
 import 'package:motion_tab_bar/TabItem.dart';
 import 'package:motion_tab_bar/motiontabbar.dart';
+
 // import 'package:flutter/src/material/colors.dart';
 
 import './Menu.dart';
+import 'movie_page.dart';
+import 'movie_list.dart';
+import 'dart:math';
 
 void main() {
   runApp(MyApp());
@@ -36,6 +40,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Movie Dare',
       theme: ThemeData(
         // This is the theme of your application.
@@ -100,6 +105,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
+
     return Scaffold(
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
@@ -110,42 +116,47 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
-        child: Menu(),
-        //child: CardList(),
+        // child: MovieList(p: page),
+        child: body(_tabController.index),
       ),
-      floatingActionButton: Align(
-        // color: Colors.blue,
-        alignment: Alignment.bottomRight,
-        // padding: EdgeInsets.only(bottom: 40, right: 10),
-        child: RawMaterialButton(
-          onPressed: () {},
-          elevation: 8.0,
-          fillColor: Color(0xFF1f2836),
-          child: Icon(
-            Icons.shuffle,
-            color: Colors.white,
-            size: 35.0,
-          ),
-          padding: EdgeInsets.all(15.0),
-          shape: CircleBorder(),
-        ),
-      ),
-      bottomNavigationBar: Container(
-        color: Colors.blue,
-        child: MotionTabBar(
-          labels: ["Hot", "Popular", "Genre"],
-          initialSelectedTab: "Hot",
-          tabIconColor: Color(0xFF1f2836),
-          tabSelectedColor: Colors.redAccent,
-          onTabItemSelected: (int value) {},
-          icons: [Icons.trending_up, Icons.movie, Icons.category],
-          textStyle: TextStyle(
-            color: Color(0xFF1f2836),
-            fontWeight: FontWeight.bold,
-            // fontSize: 18.0,
-          ),
+      bottomNavigationBar: MotionTabBar(
+        labels: ["Hot", "Popular", "Genre"],
+        initialSelectedTab: "Hot",
+        tabIconColor: Color(0xFF1f2836),
+        tabSelectedColor: Color(0xFF1f2836),
+        onTabItemSelected: (int value) {
+          setState(
+            () {
+              _tabController.index = value;
+            },
+          );
+        },
+        icons: [Icons.trending_up, Icons.movie, Icons.category],
+        textStyle: TextStyle(
+          color: Color(0xFF1f2836),
+          fontWeight: FontWeight.bold,
+          // fontSize: 18.0,
         ),
       ),
     );
+  }
+
+  Widget body(value) {
+    Random random = new Random();
+    var page = random.nextInt(100) + 1;
+    var apiKey = '47bd72aae75bbb99a3a5baaff9a9a585';
+    if (value == 0) {
+      var url =
+          'https://api.themoviedb.org/3/trending/all/day?api_key=${apiKey}';
+      return MovieList(url: url);
+    } else if (value == 1) {
+      var url =
+          'http://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&page=${page}';
+      return MovieList(url: url);
+    } else {
+      var url =
+          'https://api.themoviedb.org/3/trending/all/day?api_key=${apiKey}';
+      return MovieList(url: url);
+    }
   }
 }
