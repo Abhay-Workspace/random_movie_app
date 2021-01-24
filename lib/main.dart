@@ -229,7 +229,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   Widget body(value) {
     // Random random = new Random();
     // page = random.nextInt(100) + 1;
-    var apiKey = '47bd72aae75bbb99a3a5baaff9a9a585';
+    var apiKey = '<Your TMDB API KEY>';
     if (value == 0) {
       var url =
           'https://api.themoviedb.org/3/trending/all/day?api_key=${apiKey}';
