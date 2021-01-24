@@ -1,19 +1,26 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:motion_tab_bar/MotionTabBarView.dart';
 import 'package:motion_tab_bar/MotionTabController.dart';
-import 'package:motion_tab_bar/TabItem.dart';
 import 'package:motion_tab_bar/motiontabbar.dart';
 
-// import 'package:flutter/src/material/colors.dart';
+import 'package:filter_list/filter_list.dart';
 
-import './Menu.dart';
-import 'movie_page.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'menu_page.dart';
 import 'movie_list.dart';
 import 'dart:math';
 
 void main() {
   runApp(MyApp());
 }
+// void main() => runApp(
+//       DevicePreview(
+//         enabled: !kReleaseMode,
+//         builder: (context) => MyApp(), // Wrap your app
+//       ),
+//     );
 
 MaterialColor createMaterialColor(Color color) {
   List strengths = <double>[.05];
@@ -36,27 +43,13 @@ MaterialColor createMaterialColor(Color color) {
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Movie Dare',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
         primarySwatch: createMaterialColor(Color(0xFF1f2836)),
-        // primarySwatch: createMaterialColor(Colors.redAccent),
-        // This makes the visual density adapt to the platform that you run
-        // the app on. For desktop platforms, the controls will be smaller and
-        // closer together (more dense) than on mobile platforms.
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: MyHomePage(title: 'Movie Dare'),
@@ -65,6 +58,8 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
+  bool isSelected = false;
+
   MyHomePage({Key key, this.title}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
@@ -84,6 +79,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   MotionTabController _tabController;
+  var page;
+  var flag = false;
 
   @override
   void initState() {
@@ -97,26 +94,112 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     _tabController.dispose();
   }
 
+  Future<void> getData(url) async {
+    var data;
+    try {
+      data = await getJson(url);
+      if (data['total_pages'] > 0) {
+        Random random = new Random();
+        page = random.nextInt(data['total_pages']) + 1;
+      } else
+        page = 0;
+    } catch (error) {
+      page = 0;
+      print('error caught $error');
+      return;
+    }
+  }
+
+  List<String> countList = [
+    "Action",
+    "Adventure",
+    "Animation",
+    "Comedy",
+    "Crime",
+    "Documentary",
+    "Drama",
+    "Family",
+    "Fantasy",
+    "History",
+    "Horror",
+    "Music",
+    "Mystery",
+    "Romance",
+    "Science Fiction",
+    "TV Movie",
+    "Thriller",
+    "War",
+    "Western",
+  ];
+
+  var keyMap = {
+    "Action": "28",
+    "Adventure": "12",
+    "Animation": "16",
+    "Comedy": "35",
+    "Crime": "80",
+    "Documentary": "99",
+    "Drama": "18",
+    "Family": "10751",
+    "Fantasy": "14",
+    "History": "36",
+    "Horror": "27",
+    "Music": "10402",
+    "Mystery": "9648",
+    "Romance": "10749",
+    "Science Fiction": "878",
+    "TV Movie": "10770",
+    "Thriller": "53",
+    "War": "10752",
+    "Western": "37",
+  };
+
+  List<String> selectedCountList = [];
+  var count = 0;
+  var connectionDone = false;
+
+  void _openFilterDialog() async {
+    await FilterListDialog.display(
+      context,
+      allTextList: countList,
+      height: 480,
+      unselectedTextbackGroundColor: Colors.black12,
+      //backgroundColor: Colors.white12,
+      selectedTextBackgroundColor: Color(0xFF1f2836),
+      borderRadius: 20,
+      headlineText: "Select",
+      searchFieldHintText: "Search Here",
+      selectedTextList: selectedCountList,
+      onApplyButtonClick: (list) {
+        if (list != null) {
+          setState(() {
+            selectedCountList = List.from(list);
+            connectionDone = true;
+          });
+          Navigator.pop(context);
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
+        centerTitle: true,
         title: Text(widget.title),
+        leading: new IconButton(
+          icon: new Icon(Icons.emoji_food_beverage),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => MenuPage()),
+            );
+          },
+        ),
       ),
       backgroundColor: Colors.white,
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        // child: MovieList(p: page),
         child: body(_tabController.index),
       ),
       bottomNavigationBar: MotionTabBar(
@@ -128,6 +211,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           setState(
             () {
               _tabController.index = value;
+              connectionDone = false;
+              if (value == 2) _openFilterDialog();
             },
           );
         },
@@ -142,21 +227,63 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 
   Widget body(value) {
-    Random random = new Random();
-    var page = random.nextInt(100) + 1;
+    // Random random = new Random();
+    // page = random.nextInt(100) + 1;
     var apiKey = '47bd72aae75bbb99a3a5baaff9a9a585';
     if (value == 0) {
       var url =
           'https://api.themoviedb.org/3/trending/all/day?api_key=${apiKey}';
+      getData(url);
+      url = url + '&page=$page';
       return MovieList(url: url);
     } else if (value == 1) {
-      var url =
-          'http://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&page=${page}';
+      var url = 'http://api.themoviedb.org/3/discover/movie?api_key=${apiKey}';
+      getData(url);
+      url = url + '&page=$page';
       return MovieList(url: url);
     } else {
+      var genres = '';
+      for (var i = 0; i < selectedCountList.length; i++) {
+        genres += keyMap[selectedCountList[i]] + ",";
+      }
+      // print(genres);
+      // page = random.nextInt(10) + 1;
       var url =
-          'https://api.themoviedb.org/3/trending/all/day?api_key=${apiKey}';
-      return MovieList(url: url);
+          'https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_genres=${genres}';
+      // print(url);
+      // connectionDone = false;
+      if (connectionDone == false) {
+        return CircularProgressIndicator();
+      } else if (genres == '') {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'No results found!',
+                style: TextStyle(
+                  color: Colors.blueGrey,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+              Divider(),
+              Text(
+                'It seems you have not selected any genre.',
+                style: TextStyle(
+                  color: Colors.black38,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        );
+      } else {
+        getData(url);
+        url = url + '&page=$page';
+        return MovieList(url: url);
+      }
     }
   }
 }

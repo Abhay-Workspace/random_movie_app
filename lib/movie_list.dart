@@ -5,10 +5,6 @@ import 'package:flutter/material.dart';
 import 'movie_detail.dart';
 // import 'config.dart';
 
-import 'Post.dart';
-import 'dart:ui' as ui;
-import 'dart:math';
-
 class MovieList extends StatefulWidget {
   var url;
   MovieList({this.url});
@@ -20,23 +16,63 @@ class MovieList extends StatefulWidget {
 
 class MovieListState extends State<MovieList> {
   var movies;
+  var p;
+  var connectionDone = false;
   Color mainColor = const Color(0xff3C3261);
   var image_url = 'https://image.tmdb.org/t/p/w500/';
-  void getData() async {
-    var data = await getJson(widget.url);
 
+  Future<void> getData() async {
+    var data;
+    try {
+      data = await getJson(widget.url);
+    } catch (error) {
+      print('error caught $error');
+      return;
+    }
+
+    //movies = data['results'];
     setState(() {
-      movies = data['results'];
+      movies = data;
+      connectionDone = true;
+      // movies.shuffle();
     });
   }
 
   PageController controller = PageController();
   var currentPageValue = 0.0;
 
-  @override
-  Widget build(BuildContext context) {
-    getData();
-
+  Widget content() {
+    if (connectionDone == false) {
+      return CircularProgressIndicator();
+    }
+    if (movies == null ||
+        movies['results'] == null ||
+        movies['results'].length == 0) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'No results found!',
+              style: TextStyle(
+                color: Colors.blueGrey,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+            Divider(),
+            Text(
+              'Try different combination of filters!',
+              style: TextStyle(
+                color: Colors.black38,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     controller.addListener(() {
       setState(() {
         currentPageValue = controller.page;
@@ -44,6 +80,9 @@ class MovieListState extends State<MovieList> {
     });
     return new Container(
       color: Color(0xFF1f2836),
+      height: MediaQuery.of(context).size.height,
+      // width: MediaQuery.of(context).size.width,
+      width: MediaQuery.of(context).size.width,
       child: new Padding(
         padding: const EdgeInsets.all(2.0),
         child: new Column(
@@ -51,159 +90,84 @@ class MovieListState extends State<MovieList> {
           children: <Widget>[
             new Expanded(
               child: new PageView.builder(
-                  controller: controller,
-                  physics: BouncingScrollPhysics(),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: movies == null ? 0 : movies.length,
-                  itemBuilder: (context, i) {
-                    // if (i == currentPageValue.floor()) {
-                    //   return Transform(
-                    //     transform: Matrix4.identity()
-                    //       ..rotateX(currentPageValue - i),
-                    //     child: movieDetail(movies[i]),
-                    //   );
-                    // } else if (i == currentPageValue.floor() + 1) {
-                    //   return Transform(
-                    //     transform: Matrix4.identity()
-                    //       ..rotateX(currentPageValue - i),
-                    //     child: movieDetail(movies[i]),
-                    //   );
-                    // } else {
-                    //   return movieDetail(movies[i]);
-                    // }
-                    return movieDetail(movies[i]);
-                  }),
-            )
+                // pageSnapping: false,
+                controller: controller,
+                physics: AlwaysScrollableScrollPhysics(),
+                scrollDirection: Axis.horizontal,
+                itemCount:
+                    movies['results'] == null ? 0 : movies['results'].length,
+                itemBuilder: (context, i) {
+                  if (i == currentPageValue.floor()) {
+                    try {
+                      return Transform(
+                        transform: Matrix4.identity()
+                          ..rotateX(currentPageValue - i),
+                        child: MovieDetail(movies['results'][i]),
+                      );
+                    } catch (e) {
+                      // print(e);
+                      return Container(
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Something went wrong! I had told you to buy my developer a coffee :/',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      );
+                    }
+                  } else if (i == currentPageValue.floor() + 1) {
+                    try {
+                      return Transform(
+                        transform: Matrix4.identity()
+                          ..rotateX(currentPageValue - i),
+                        child: MovieDetail(movies['results'][i]),
+                      );
+                    } catch (e) {
+                      // print(e);
+                      return Container(
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Something went wrong! I had told you to buy my developer a coffee :/',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      );
+                    }
+                  } else {
+                    try {
+                      return MovieDetail(movies['results'][i]);
+                    } catch (e) {
+                      // print(e);
+                      return Container(
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Something went wrong! I had told you to buy my developer a coffee :/',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                  // return MovieDetail(movies['results'][i]);
+                },
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget movieDetail(movie) {
-    if (movie == null) {
-      // setState(() {});
-      return Text('Common dude! You are searching a lot!');
-    }
-    // var i = random.nextInt(snapshot.data.results.length);
-    // var movie = snapshot.data.results[i];
-    // var title = movie['title'] == null ? movie['name'] : movie['title'];
-    return Container(
-      child: new Stack(fit: StackFit.expand, children: [
-        new Image.network(
-          image_url + movie['poster_path'],
-          fit: BoxFit.cover,
-        ),
-        new BackdropFilter(
-          filter: new ui.ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-          child: new Container(
-            color: Colors.black.withOpacity(0.5),
-          ),
-        ),
-        new SingleChildScrollView(
-          child: new Container(
-            margin: const EdgeInsets.all(20.0),
-            child: new Column(
-              children: <Widget>[
-                new Container(
-                  alignment: Alignment.center,
-                  child: new Container(
-                    width: 400.0,
-                    height: 400.0,
-                  ),
-                  decoration: new BoxDecoration(
-                      borderRadius: new BorderRadius.circular(10.0),
-                      image: new DecorationImage(
-                          image: new NetworkImage(
-                              image_url + movie['poster_path']),
-                          fit: BoxFit.cover),
-                      boxShadow: [
-                        new BoxShadow(
-                            color: Colors.black,
-                            blurRadius: 20.0,
-                            offset: new Offset(0.0, 10.0))
-                      ]),
-                ),
-                new Container(
-                  margin: const EdgeInsets.symmetric(
-                      vertical: 20.0, horizontal: 0.0),
-                  child: new Row(
-                    children: <Widget>[
-                      new Expanded(
-                          child: new Text(
-                        movie['title'] == null ? movie['name'] : movie['title'],
-                        style: new TextStyle(
-                            color: Colors.white,
-                            fontSize: 30.0,
-                            fontFamily: 'Arvo'),
-                      )),
-                      new Text(
-                        '${movie['vote_average']}/10',
-                        style: new TextStyle(
-                            color: Colors.white,
-                            fontSize: 20.0,
-                            fontFamily: 'Arvo'),
-                      )
-                    ],
-                  ),
-                ),
-                new Text(movie['overview'],
-                    style:
-                        new TextStyle(color: Colors.white, fontFamily: 'Arvo')),
-                new Padding(padding: const EdgeInsets.all(10.0)),
-                new Row(
-                  children: <Widget>[
-                    new Expanded(
-                        child: new Container(
-                      width: 150.0,
-                      height: 60.0,
-                      alignment: Alignment.center,
-                      child: new Text(
-                        'Rate Movie',
-                        style: new TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'Arvo',
-                            fontSize: 20.0),
-                      ),
-                      decoration: new BoxDecoration(
-                          borderRadius: new BorderRadius.circular(10.0),
-                          color: const Color(0xaa3C3261)),
-                    )),
-                    new Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: new Container(
-                        padding: const EdgeInsets.all(16.0),
-                        alignment: Alignment.center,
-                        child: new Icon(
-                          Icons.share,
-                          color: Colors.white,
-                        ),
-                        decoration: new BoxDecoration(
-                            borderRadius: new BorderRadius.circular(10.0),
-                            color: const Color(0xaa3C3261)),
-                      ),
-                    ),
-                    new Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: new Container(
-                          padding: const EdgeInsets.all(16.0),
-                          alignment: Alignment.center,
-                          child: new Icon(
-                            Icons.bookmark,
-                            color: Colors.white,
-                          ),
-                          decoration: new BoxDecoration(
-                              borderRadius: new BorderRadius.circular(10.0),
-                              color: const Color(0xaa3C3261)),
-                        )),
-                  ],
-                )
-              ],
-            ),
-          ),
-        )
-      ]),
-    );
+  @override
+  Widget build(BuildContext context) {
+    getData();
+    return content();
   }
 }
 
